@@ -22,6 +22,8 @@ import discord
 import tomli
 from discord.ext import commands
 
+from bot import models
+
 __log__ = logging.getLogger(__name__)
 
 
@@ -47,6 +49,7 @@ class Winston(commands.Bot):
             allowed_mentions=allowed_mentions,
             help_command=None,
             max_messages=None,
+            tree_cls=models.CommandTree,
         )
 
     # Overrides
