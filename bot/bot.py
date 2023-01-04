@@ -17,12 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import asyncio
 import logging
+import os
+import pathlib
 
 import discord
 import tomli
 from discord.ext import commands
 
-from bot import models
+from bot import models, config
 
 __log__ = logging.getLogger(__name__)
 
@@ -40,13 +42,14 @@ class Winston(commands.Bot):
     def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
         self.loop = loop
 
-        intents = discord.Intents(guilds=True)
+        intents = discord.Intents(guilds=True, guild_messages=True)
         allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False)
 
         super().__init__(
             command_prefix=commands.when_mentioned,
             intents=intents,
             allowed_mentions=allowed_mentions,
+            owner_ids=set(config.OWNER_IDS),
             help_command=None,
             max_messages=None,
             tree_cls=models.CommandTree,
@@ -54,6 +57,26 @@ class Winston(commands.Bot):
 
     # Overrides
     async def setup_hook(self) -> None:
+        plugins = ["jishaku"]
+
+        # Load Files
+        for f in os.listdir(f"./bot/plugins"):
+            plugins.append(f)
+
+        # Load Folders
+        for path in pathlib.Path("./bot/plugins").glob("*/__init__.py"):
+            plugins.append(str(path.parent).replace("/", ".").replace("\\", "."))
+
+        failed = 0
+        for plugin in plugins:
+            try:
+                await self.load_extension(plugin)
+            except Exception as exc:
+                failed += 1
+                __log__.error(f"Failed to load plugin '{plugin}'", exc_info=exc)
+
+        __log__.info(f"Loaded {len(plugins) - failed} plugin(s)" + (f" | Failed to load {failed} plugin(s)" if failed else ""))
+
         with open("./pyproject.toml", "rb") as f:
             self.version = tomli.load(f)["tool"]["poetry"]["version"]
 
