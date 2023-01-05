@@ -24,7 +24,7 @@ import discord
 import tomli
 from discord.ext import commands
 
-from bot import models, config
+from bot import config, models
 
 __log__ = logging.getLogger(__name__)
 
@@ -61,11 +61,13 @@ class Winston(commands.Bot):
 
         # Load Files
         for f in os.listdir(f"./bot/plugins"):
-            plugins.append(f)
+            plugins.append(f"bot.plugins.{f[:-3]}")
 
         # Load Folders
         for path in pathlib.Path("./bot/plugins").glob("*/__init__.py"):
             plugins.append(str(path.parent).replace("/", ".").replace("\\", "."))
+
+        __log__.debug(f"Plugins Detected: {', '.join(plugins)}")
 
         failed = 0
         for plugin in plugins:
@@ -75,7 +77,9 @@ class Winston(commands.Bot):
                 failed += 1
                 __log__.error(f"Failed to load plugin '{plugin}'", exc_info=exc)
 
-        __log__.info(f"Loaded {len(plugins) - failed} plugin(s)" + (f" | Failed to load {failed} plugin(s)" if failed else ""))
+        __log__.info(
+            f"Loaded {len(plugins) - failed} plugin(s)" + (f" | Failed to load {failed} plugin(s)" if failed else "")
+        )
 
         with open("./pyproject.toml", "rb") as f:
             self.version = tomli.load(f)["tool"]["poetry"]["version"]
