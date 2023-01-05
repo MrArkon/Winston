@@ -42,7 +42,7 @@ class Winston(commands.Bot):
     def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
         self.loop = loop
 
-        intents = discord.Intents(guilds=True, guild_messages=True)
+        intents = discord.Intents(members=True, guilds=True, guild_messages=True)
         allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False)
         activity = discord.Activity(name="the Tomfoolery Olympics", type=discord.ActivityType.competing)
 
@@ -50,6 +50,7 @@ class Winston(commands.Bot):
             command_prefix=commands.when_mentioned,
             intents=intents,
             allowed_mentions=allowed_mentions,
+            activity=activity,
             owner_ids=set(config.OWNER_IDS),
             help_command=None,
             max_messages=None,
