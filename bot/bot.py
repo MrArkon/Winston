@@ -61,7 +61,8 @@ class Winston(commands.Bot):
 
         # Load Files
         for f in os.listdir(f"./bot/plugins"):
-            plugins.append(f"bot.plugins.{f[:-3]}")
+            if f.endswith(".py"):
+                plugins.append(f"bot.plugins.{f[:-3]}")
 
         # Load Folders
         for path in pathlib.Path("./bot/plugins").glob("*/__init__.py"):
