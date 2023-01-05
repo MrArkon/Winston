@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import asyncio
 import logging
+import os
 import sys
 from contextlib import suppress
 
@@ -38,6 +39,9 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 discord.VoiceClient.warn_nacl = False
+
+os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
+os.environ['JISHAKU_NO_DM_TRACEBACK'] = "True"
 
 
 async def start() -> None:
