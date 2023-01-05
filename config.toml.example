@@ -2,6 +2,9 @@
 token = ""
 owner_ids = []
 
+[bot.webhooks]
+error = ""
+
 [bot.emojis]
 active_developer = 0
 bug_hunter = 0
