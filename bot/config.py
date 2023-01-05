@@ -24,6 +24,8 @@ with open("config.toml", "rb") as f:
 TOKEN = f["bot"]["settings"]["token"]
 OWNER_IDS = f["bot"]["settings"]["owner_ids"]
 
+ERRORS_WEBHOOK_URL = f["bot"]["webhooks"]["error"]
+
 EMOJIS: dict[str, discord.PartialEmoji] = {}
 for name, id in f["bot"]["emojis"].items():
     EMOJIS[name] = discord.PartialEmoji(name=name, id=id)

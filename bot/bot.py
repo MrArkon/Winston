@@ -20,8 +20,8 @@ import logging
 import os
 import pathlib
 
+import aiohttp
 import discord
-import tomli
 from discord.ext import commands
 
 from bot import config, models
@@ -35,12 +35,17 @@ class Winston(commands.Bot):
 
     Parameters
     ----------
-    loop: :class:`AbstractEventLoop`
+    loop: :class:`asyncio.AbstractEventLoop`
         The main running event loop.
+    session: :class:`aiohttp.ClientSession`
+        A seperate client session used for querying other APIs.
     """
 
-    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
+    version: str
+
+    def __init__(self, loop: asyncio.AbstractEventLoop, session: aiohttp.ClientSession) -> None:
         self.loop = loop
+        self.session = session
 
         intents = discord.Intents(members=True, guilds=True, guild_messages=True)
         allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False)
@@ -56,6 +61,8 @@ class Winston(commands.Bot):
             max_messages=None,
             tree_cls=models.CommandTree,
         )
+
+        self.ERRORS_WEBHOOK = discord.Webhook.from_url(config.ERRORS_WEBHOOK_URL, session=self.session)
 
     # Overrides
     async def setup_hook(self) -> None:
@@ -83,9 +90,6 @@ class Winston(commands.Bot):
         __log__.info(
             f"Loaded {len(plugins) - failed} plugin(s)" + (f" | Failed to load {failed} plugin(s)" if failed else "")
         )
-
-        with open("./pyproject.toml", "rb") as f:
-            self.version = tomli.load(f)["tool"]["poetry"]["version"]
 
         return await super().setup_hook()
 

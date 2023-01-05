@@ -21,7 +21,9 @@ import os
 import sys
 from contextlib import suppress
 
+import aiohttp
 import discord
+import tomli
 
 from bot import Winston, config
 
@@ -52,15 +54,22 @@ async def start() -> None:
     logging.getLogger("discord.http").setLevel(logging.WARNING)
 
     # Setup Bot Instance
-    loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop()
+
+    with open("./pyproject.toml", "rb") as f:
+        version = tomli.load(f)["tool"]["poetry"]["version"]
+
+    session = aiohttp.ClientSession(headers={"User-Agent": f"Winston/{version} (https://github.com/MrArkon/Winston)"})
 
     try:
-        bot = Winston(loop=loop)
+        bot = Winston(loop=loop, session=session)
     except Exception as exc:
         return __log__.warn("Failed to instantiate Winston", exc_info=exc)
 
+    bot.version = version
+
     # Launching the Bot
-    async with bot:
+    async with bot, session:
         await bot.start(config.TOKEN)
 
 
