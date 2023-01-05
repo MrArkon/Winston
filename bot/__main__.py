@@ -41,7 +41,7 @@ if sys.platform == "win32":
 discord.VoiceClient.warn_nacl = False
 
 os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
-os.environ['JISHAKU_NO_DM_TRACEBACK'] = "True"
+os.environ["JISHAKU_NO_DM_TRACEBACK"] = "True"
 
 
 async def start() -> None:
