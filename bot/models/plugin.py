@@ -1,5 +1,5 @@
 """
-Winston: Discord Utility Bot
+Winston: Utilities & Moderation Tools for Discord
 Copyright (C) 2023 MrArkon
 
 This program is free software: you can redistribute it and/or modify
