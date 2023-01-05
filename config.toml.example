@@ -1,3 +1,18 @@
 [bot.settings]
 token = ""
 owner_ids = []
+
+[bot.emojis]
+active_developer = 0
+bug_hunter = 0
+bug_hunter_level_2 = 0
+discord_certified_moderator = 0
+early_supporter = 0
+hypesquad = 0
+hypesquad_balance = 0
+hypesquad_bravery = 0
+hypesquad_brilliance = 0
+nitro = 0
+partner = 0
+staff = 0
+verified_bot_developer = 0

@@ -15,6 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+import discord
 import tomli
 
 with open("config.toml", "rb") as f:
@@ -22,3 +23,7 @@ with open("config.toml", "rb") as f:
 
 TOKEN = f["bot"]["settings"]["token"]
 OWNER_IDS = f["bot"]["settings"]["owner_ids"]
+
+EMOJIS: dict[str, discord.PartialEmoji] = {}
+for name, id in f["bot"]["emojis"].items():
+    EMOJIS[name] = discord.PartialEmoji(name=name, id=id)
