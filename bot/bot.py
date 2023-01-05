@@ -44,6 +44,7 @@ class Winston(commands.Bot):
 
         intents = discord.Intents(guilds=True, guild_messages=True)
         allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False)
+        activity = discord.Activity(name="the Tomfoolery Olympics", type=discord.ActivityType.competing)
 
         super().__init__(
             command_prefix=commands.when_mentioned,
