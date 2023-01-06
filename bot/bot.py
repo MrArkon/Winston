@@ -93,6 +93,12 @@ class Winston(commands.Bot):
 
         return await super().setup_hook()
 
+    async def close(self) -> None:
+        try:
+            await super().close()
+        finally:
+            await self.session.close()
+
     # Events
     async def on_ready(self) -> None:
         message = "Reconnected"
