@@ -15,6 +15,20 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from .models import *
-from .utilities import *
-from .bot import Winston
+
+
+class Plural:
+    """
+    A format spec which handles making words plural or singular based off of its value.
+
+    Credit: https://github.com/Rapptz/RoboDanny/blob/rewrite/cogs/utils/formats.py#L8-L18
+    """
+
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __format__(self, format_spec: str) -> str:
+        singular, _, plural = format_spec.partition("|")
+        plural = plural or f"{singular}s"
+
+        return f"{self.value:,} {plural}" if abs(self.value) != 1 else f"{self.value} {singular}"
