@@ -26,7 +26,7 @@ from bot import Winston, config, models
 class Miscellaneous(models.Plugin):
     @app.command()
     async def ping(self, interaction: discord.Interaction) -> None:
-        """Measures the latency and response time of the bot"""
+        """Measures the latency and response time of the bot."""
         embed = discord.Embed(
             description=f"\N{HEAVY BLACK HEART} **Hearbeat:** {self.bot.latency * 1000:.2f}ms", color=discord.Color.blurple()
         )
@@ -42,14 +42,15 @@ class Miscellaneous(models.Plugin):
 
         await interaction.edit_original_response(embed=embed)
 
-    info = app.Group(name="info", description="Parent command for information based commands")
+    info = app.Group(name="info", description="Parent command for information based commands.")
 
     @info.command()
-    @app.describe(user="The user you want information about")
-    async def user(self, interaction: discord.Interaction, user: discord.Member | discord.User | None = None):
-        """Obtain information about a specified user or yourself"""
-        await interaction.response.defer()
-
+    @app.describe(user="The user you want information about.")
+    @app.describe(ephemeral="Setting this to True makes it so that only you can see it. Default is False.")
+    async def user(
+        self, interaction: discord.Interaction, user: discord.Member | discord.User | None = None, ephemeral: bool = False
+    ):
+        """Obtain information about a specified user or yourself."""
         user = user or interaction.user
 
         embed = discord.Embed(color=user.color if user.color != discord.Color.default() else discord.Color.blurple())
@@ -88,18 +89,20 @@ class Miscellaneous(models.Plugin):
                 name="Key Permissions",
                 value=", ".join(
                     f"{permission.replace('_', ' ').title()}"
-                    for permission, value in iter(user.guild_permissions & discord.Permissions(27812569150))
+                    for permission, value in user.guild_permissions & discord.Permissions(27812569150)
                     if value
-                ),
+                )
+                if not user.guild_permissions.administrator
+                else "Administrator",
                 inline=False,
             )
 
         embed.set_footer(
             text=f"ID: {user.id}"
-            + (" | This user is not a member of this server" if not isinstance(user, discord.Member) else "")
+            + (" | This user is not a member of this server." if not isinstance(user, discord.Member) else "")
         )
 
-        await interaction.followup.send(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
 
 async def setup(bot: Winston) -> None:
