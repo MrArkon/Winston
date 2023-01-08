@@ -24,7 +24,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from bot import config, models
+from bot import Plural, config, models
 
 __log__ = logging.getLogger(__name__)
 
@@ -88,7 +88,8 @@ class Winston(commands.Bot):
                 __log__.error(f"Failed to load plugin '{plugin}'", exc_info=exc)
 
         __log__.info(
-            f"Loaded {len(plugins) - failed} plugin(s)" + (f" | Failed to load {failed} plugin(s)" if failed else "")
+            f"Loaded {Plural(len(plugins) - failed):Plugin}"
+            + (f" | Failed to load {Plural(failed):Plugin}" if failed else "")
         )
 
         return await super().setup_hook()
