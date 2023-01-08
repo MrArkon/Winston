@@ -45,7 +45,7 @@ class Miscellaneous(Plugin):
     info = app.Group(name="info", description="Parent command for information based commands.")
 
     @info.command()
-    @app.describe(user="The user you want information about.")
+    @app.describe(user="The user you want information about. Defaults to you if nothing is provided.")
     @app.describe(ephemeral="Setting this to True makes it so that only you can see it. Default is False.")
     async def user(
         self, interaction: discord.Interaction, user: discord.Member | discord.User | None = None, ephemeral: bool = False
@@ -107,7 +107,7 @@ class Miscellaneous(Plugin):
     @info.command()
     @app.describe(ephemeral="Setting this to True makes it so that only you can see it. Default is False.")
     async def server(self, interaction: discord.Interaction, ephemeral: bool = False) -> None:
-        """Obtain information about this server"""
+        """Obtain information about this server."""
         embed = discord.Embed(color=discord.Color.blurple())
         embed.set_author(name=str(interaction.guild), icon_url=getattr(interaction.guild.icon, "url", None))
 
@@ -179,6 +179,61 @@ class Miscellaneous(Plugin):
         )
 
         embed.set_footer(text=f"ID: {interaction.guild.id}")
+
+        await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
+
+    @info.command()
+    @app.describe(role="The role you want information about. Defaults to your top role if nothing is provided.")
+    @app.describe(ephemeral="Setting this to True makes it so that only you can see it. Default is False.")
+    async def role(
+        self, interaction: discord.Interaction, role: discord.Role | None = None, ephemeral: bool = False
+    ) -> None:
+        """Obtain information about a role."""
+        assert isinstance(interaction.user, discord.Member)
+
+        role = role or interaction.user.top_role
+
+        embed = discord.Embed(
+            description=role.mention if not role.is_default() else role.name,
+            color=role.color if role.color != discord.Color.default() else discord.Color.blurple(),
+        )
+        embed.set_author(
+            name=role.name,
+            icon_url=role.display_icon if not isinstance(role.display_icon, discord.Asset) else role.display_icon.url,
+        )
+
+        embed.add_field(
+            name="Created At",
+            value="\n".join(discord.utils.format_dt(role.created_at, style=f) for f in ["D", "R"]),  # type: ignore
+        )
+
+        features = []
+        if role.hoist:
+            features.append("Displayed Separately")
+        if role.managed:
+            features.append("Managed by " + (f"<@{role.tags.bot_id}>" if role.is_bot_managed() else "an integration"))
+        if role.mentionable:
+            features.append("Mentionable by Anyone")
+        if role.is_premium_subscriber():
+            features.append("Premium/Booster Role")
+        if role.is_default():
+            features.append("Default Role")
+
+        embed.add_field(name="Features", value="\n".join(features) if features else "None")
+
+        embed.add_field(name="Color", value=str(role.color).upper())
+
+        embed.add_field(
+            name="Key Permissions",
+            value=", ".join(
+                f"{permission.replace('_', ' ').title()}"
+                for permission, value in role.permissions & discord.Permissions(27812569150)
+                if value
+            )
+            if not role.permissions.administrator
+            else "Administrator",
+            inline=False,
+        )
 
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
