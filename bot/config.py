@@ -26,6 +26,9 @@ OWNER_IDS = f["bot"]["settings"]["owner_ids"]
 
 ERRORS_WEBHOOK_URL = f["bot"]["webhooks"]["error"]
 
-EMOJIS: dict[str, discord.PartialEmoji] = {}
-for name, id in f["bot"]["emojis"].items():
-    EMOJIS[name] = discord.PartialEmoji(name=name, id=id)
+TEXT_CHANNEL = discord.PartialEmoji(name="text_channel", id=f["bot"]["emojis"]["text_channel"])
+VOICE_CHANNEL = discord.PartialEmoji(name="voice_channel", id=f["bot"]["emojis"]["voice_channel"])
+
+BADGES: dict[str, discord.PartialEmoji] = {}
+for name, id in f["bot"]["badges"].items():
+    BADGES[name] = discord.PartialEmoji(name=name, id=id)

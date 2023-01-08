@@ -6,6 +6,10 @@ owner_ids = []
 error = ""
 
 [bot.emojis]
+text_channel = 0
+voice_channel = 0
+
+[bot.badges]
 active_developer = 0
 bug_hunter = 0
 bug_hunter_level_2 = 0
