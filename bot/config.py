@@ -26,6 +26,14 @@ OWNER_IDS = f["bot"]["settings"]["owner_ids"]
 
 ERRORS_WEBHOOK_URL = f["bot"]["webhooks"]["error"]
 
+MENU = discord.PartialEmoji(name="menu", id=f["bot"]["emojis"]["menu"])
+EDIT = discord.PartialEmoji(name="edit", id=f["bot"]["emojis"]["edit"])
+COLOR = discord.PartialEmoji(name="color", id=f["bot"]["emojis"]["color"])
+IMAGE = discord.PartialEmoji(name="image", id=f["bot"]["emojis"]["image"])
+ADD = discord.PartialEmoji(name="add", id=f["bot"]["emojis"]["add"])
+REMOVE = discord.PartialEmoji(name="remove", id=f["bot"]["emojis"]["remove"])
+TOGGLE_ON = discord.PartialEmoji(name="toggle_on", id=f["bot"]["emojis"]["toggle_on"])
+TOGGLE_OFF = discord.PartialEmoji(name="toggle_off", id=f["bot"]["emojis"]["toggle_off"])
 TEXT_CHANNEL = discord.PartialEmoji(name="text_channel", id=f["bot"]["emojis"]["text_channel"])
 VOICE_CHANNEL = discord.PartialEmoji(name="voice_channel", id=f["bot"]["emojis"]["voice_channel"])
 
