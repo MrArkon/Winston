@@ -15,7 +15,10 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from .models import *
-from .utilities import *
-from .views import *
-from .bot import Winston
+from bot import Winston
+
+from .plugin import Utilities
+
+
+async def setup(bot: Winston) -> None:
+    await bot.add_cog(Utilities(bot))
