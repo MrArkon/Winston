@@ -20,7 +20,7 @@ import time
 import discord
 from discord import app_commands as app
 
-from bot import Plugin, Plural, Winston, config
+from bot import Plugin, Plural, View, Winston, config
 
 
 class Miscellaneous(Plugin):
@@ -50,15 +50,14 @@ class Miscellaneous(Plugin):
     async def user(
         self, interaction: discord.Interaction, user: discord.Member | discord.User | None = None, ephemeral: bool = False
     ):
-        """Obtain information about a specified user or yourself."""
+        """Obtain information about any user, whether in the server or not."""
         user = user or interaction.user
 
-        embed = discord.Embed(color=user.color if user.color != discord.Color.default() else discord.Color.blurple())
-        embed.set_author(name=str(user), icon_url=user.display_avatar.url)
-
-        embed.description = f"{user.mention} " + " ".join(
-            str(config.BADGES.get(name, "")) for name, value in user.public_flags if value
+        embed = discord.Embed(
+            title=f"{user} " + " ".join(str(config.BADGES.get(name, "")) for name, value in user.public_flags if value),
+            color=user.color if user.color != discord.Color.default() else discord.Color.blurple(),
         )
+        embed.set_thumbnail(url=user.display_avatar.url)
 
         embed.add_field(
             name="Discord User Since", value="\n".join(discord.utils.format_dt(user.created_at, style=f) for f in ["D", "R"])  # type: ignore
@@ -77,32 +76,43 @@ class Miscellaneous(Plugin):
                 value=", ".join(
                     role.mention if not role.is_default() else "@everyone"
                     for role in sorted(user.roles, key=lambda role: role.position, reverse=True)
-                )
-                + (
-                    f"\n\n**Top Role:** {user.top_role.mention}\n**Top Role Color:** {user.top_role.color.__str__().upper()}"
-                    if not user.top_role.is_default()
-                    else ""
                 ),
             )
 
             embed.add_field(
                 name="Key Permissions",
-                value=", ".join(
-                    f"{permission.replace('_', ' ').title()}"
-                    for permission, value in user.guild_permissions & discord.Permissions(27812569150)
-                    if value
+                value=(
+                    ", ".join(
+                        f"{permission.replace('_', ' ').title()}"
+                        for permission, value in user.guild_permissions & discord.Permissions(27812569150)
+                        if value
+                    )
+                    if not user.guild_permissions.administrator
+                    else "Administrator"
                 )
-                if not user.guild_permissions.administrator
-                else "Administrator",
-                inline=False,
+                or "None",
             )
 
-        embed.set_footer(
-            text=f"ID: {user.id}"
-            + (" | This user is not a member of this server." if not isinstance(user, discord.Member) else "")
+        embed.set_footer(text=f"ID: {user.id}")
+
+        view = View(interaction, timeout=None)
+        view.add_item(discord.ui.Button(label="View Avatar", style=discord.ButtonStyle.link, url=user.avatar.url))
+        view.add_item(
+            discord.ui.Button(
+                label="View Profile", style=discord.ButtonStyle.link, url=f"https://discord.com/users/{user.id}"
+            )
         )
 
-        await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
+        if isinstance(user, discord.Member):
+            view.add_item(
+                discord.ui.Button(
+                    label="View All Permissions",
+                    style=discord.ButtonStyle.link,
+                    url=f"https://discordapi.com/permissions.html#{user.guild_permissions.value}",
+                )
+            )
+
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
 
     @info.command()
     @app.describe(ephemeral="Setting this to True makes it so that only you can see it. Default is False.")
