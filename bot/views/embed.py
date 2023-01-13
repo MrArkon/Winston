@@ -29,44 +29,46 @@ __log__ = logging.getLogger(__name__)
 
 @dataclass
 class Author:
-    toggled = True
+    name: str | None = None
+    icon: str | None = None
+    toggled: bool = True
 
 
 @dataclass
 class Title:
-    toggled = True
     title: str = "Title"
     url: str | None = None
+    toggled: bool = True
 
 
 @dataclass
 class Description:
-    toggled = True
     description: str = "Description"
+    toggled: bool = True
 
 
 @dataclass
 class Thumbnail:
-    toggled = True
     thumbnail: str = "https://i.imgur.com/uNJ2GWB.png"
+    toggled: bool = True
 
 
 @dataclass
 class Image:
-    toggled = True
     image: str = "https://i.imgur.com/JKPjTUi.png"
+    toggled: bool = True
 
 
 @dataclass
 class Footer:
-    toggled = True
     text: str = "Footer Text"
+    toggled: bool = True
 
 
 @dataclass
 class FooterIcon:
-    toggled = True
     icon: str = "https://i.imgur.com/pswoA1x.png"
+    toggled: bool = True
 
 
 @dataclass
@@ -370,14 +372,14 @@ class EditEmbedSections(discord.ui.Select["CreateEmbed"]):
 
 
 class ToggleEmbedSections(discord.ui.Select["CreateEmbed"]):
-    def __init__(self) -> None:
+    def __init__(self, view: CreateEmbed) -> None:
         options = [
             discord.SelectOption(
                 label=section.replace("_", " ").title(),
                 value=section,
                 description=f"To toggle ON/OFF {section.replace('_', ' ').title()}",
                 emoji=config.TOGGLE_ON,
-                default=True,
+                default=getattr(view, section).toggled,
             )
             for section in ["author", "title", "description", "thumbnail", "image", "footer", "footer_icon"]
         ]
@@ -408,6 +410,7 @@ class CreateEmbed(views.View):
         interaction: discord.Interaction,
         channel: discord.TextChannel | None = None,
         mention: discord.Role | None = None,
+        to_edit: discord.Message | None = None,
         **kwargs,
     ):
         super().__init__(interaction, timeout=300, delete_after=True)
@@ -415,6 +418,7 @@ class CreateEmbed(views.View):
         assert isinstance(self.interaction.channel, discord.TextChannel)
         self.channel = channel or self.interaction.channel
         self.mention = mention
+        self.to_edit = to_edit
 
         self.author = kwargs.get("author", Author())
         self.title = kwargs.get("title", Title())
@@ -427,7 +431,7 @@ class CreateEmbed(views.View):
         self.color = kwargs.get("color", discord.Color.blurple())
 
         self.clear_items()
-        self.add_item(ToggleEmbedSections())
+        self.add_item(ToggleEmbedSections(self))
         self.add_item(EditEmbedSections(self))
         self.add_item(views.DismissButton())
         self.add_item(self.post)
@@ -440,7 +444,10 @@ class CreateEmbed(views.View):
 
     def sync_embed_sections(self, embed: discord.Embed) -> discord.Embed:
         if self.author.toggled:
-            embed.set_author(name=self.interaction.user.name, icon_url=self.interaction.user.display_avatar.url)
+            embed.set_author(
+                name=self.author.name or self.interaction.user.name,
+                icon_url=self.author.icon or self.interaction.user.display_avatar.url,
+            )
         else:
             embed.remove_author()
 
@@ -469,13 +476,21 @@ class CreateEmbed(views.View):
         await interaction.response.defer(ephemeral=True)
         await self.on_timeout()
 
-        message = await self.channel.send(
-            content=getattr(self.mention, "mention", None),
-            embed=self.message.embeds[0],
-            allowed_mentions=discord.AllowedMentions.all(),
-        )
+        if self.to_edit:
+            message = await self.to_edit.edit(embed=self.message.embeds[0])
 
-        await interaction.followup.send(
-            f"Successfully sent the embed [message]({message.jump_url}) to {self.channel.mention}",
-            ephemeral=True,
-        )
+            await interaction.followup.send(
+                f"Successfully edited the [message]({message.jump_url}) in {self.channel.mention}",
+                ephemeral=True,
+            )
+        else:
+            message = await self.channel.send(
+                content=getattr(self.mention, "mention", None),
+                embed=self.message.embeds[0],
+                allowed_mentions=discord.AllowedMentions.all(),
+            )
+
+            await interaction.followup.send(
+                f"Successfully sent the embed [message]({message.jump_url}) to {self.channel.mention}",
+                ephemeral=True,
+            )
