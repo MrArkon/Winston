@@ -118,8 +118,8 @@ class Miscellaneous(Plugin):
     @app.describe(ephemeral="Setting this to True makes it so that only you can see it. Default is False.")
     async def server(self, interaction: discord.Interaction, ephemeral: bool = False) -> None:
         """Obtain information about this server."""
-        embed = discord.Embed(color=discord.Color.blurple())
-        embed.set_author(name=str(interaction.guild), icon_url=getattr(interaction.guild.icon, "url", None))
+        embed = discord.Embed(title=interaction.guild.name, color=discord.Color.blurple())
+        embed.set_thumbnail(url=getattr(interaction.guild.icon, "url", None))
 
         embed.add_field(name="Owner", value=interaction.guild.owner.mention)
 
@@ -164,7 +164,7 @@ class Miscellaneous(Plugin):
         embed.add_field(
             name="Moderation",
             value=f"2FA: {'Enabled' if interaction.guild.mfa_level.value else 'Disabled'}\n"
-            f"Explicit Media Filter: {['Disabled', 'Medium', 'High'][interaction.guild.explicit_content_filter.value]}\n"
+            f"Media Filter: {['Disabled', 'Medium', 'High'][interaction.guild.explicit_content_filter.value]}\n"
             f"Verification: {str(interaction.guild.verification_level).title()}",
         )
 
@@ -181,7 +181,7 @@ class Miscellaneous(Plugin):
 
         embed.add_field(
             name="Server Limits",
-            value=f"Emojis: {len(interaction.guild.emojis)}/{interaction.guild.emoji_limit}\n"
+            value=f"Emojis: {len(interaction.guild.emojis)}/{interaction.guild.emoji_limit * 2}\n"
             f"Bitrate: {int(interaction.guild.bitrate_limit / 1000)} Kbps\n"
             f"File Size Limit: {int(interaction.guild.filesize_limit / 1048576)} MB\n"
             f"Maximum Members: {interaction.guild.max_members:,}",
@@ -202,14 +202,11 @@ class Miscellaneous(Plugin):
         assert isinstance(interaction.user, discord.Member)
 
         role = role or interaction.user.top_role
+        default_color = discord.Color(0x99AAB5)
 
         embed = discord.Embed(
-            description=role.mention if not role.is_default() else role.name,
-            color=role.color if role.color != discord.Color.default() else discord.Color.blurple(),
-        )
-        embed.set_author(
-            name=role.name,
-            icon_url=role.display_icon if not isinstance(role.display_icon, discord.Asset) else role.display_icon.url,
+            title=("@" if not role.is_default() else "") + role.name,
+            color=role.color if role.color != discord.Color.default() else default_color,
         )
 
         embed.add_field(
@@ -221,7 +218,7 @@ class Miscellaneous(Plugin):
         if role.hoist:
             features.append("Displayed Separately")
         if role.managed:
-            features.append("Managed by " + (f"<@{role.tags.bot_id}>" if role.is_bot_managed() else "an integration"))
+            features.append("Managed by " + (f"<@{role.tags.bot_id}>" if role.is_bot_managed() else "an Integration"))
         if role.mentionable:
             features.append("Mentionable by Anyone")
         if role.is_premium_subscriber():
@@ -231,19 +228,24 @@ class Miscellaneous(Plugin):
 
         embed.add_field(name="Features", value="\n".join(features) if features else "None")
 
-        embed.add_field(name="Color", value=str(role.color).upper())
+        embed.add_field(name="Color", value=str(embed.color).upper())
 
         embed.add_field(
             name="Key Permissions",
-            value=", ".join(
-                f"{permission.replace('_', ' ').title()}"
-                for permission, value in role.permissions & discord.Permissions(27812569150)
-                if value
+            value=(
+                ", ".join(
+                    f"{permission.replace('_', ' ').title()}"
+                    for permission, value in role.permissions & discord.Permissions(27812569150)
+                    if value
+                )
+                if not role.permissions.administrator
+                else "Administrator"
             )
-            if not role.permissions.administrator
-            else "Administrator",
+            or "None",
             inline=False,
         )
+
+        embed.set_footer(text=f"ID: {role.id}")
 
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
