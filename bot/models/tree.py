@@ -25,6 +25,8 @@ from typing import TYPE_CHECKING
 import discord
 from discord import app_commands as app
 
+from bot import models
+
 if TYPE_CHECKING:
     from bot import Winston
 
@@ -52,7 +54,10 @@ class CommandTree(app.CommandTree):
         or logs it in the error webhook if it is an unknown error.
         """
         send = interaction.followup.send if interaction.response.is_done() else interaction.response.send_message
-        error = getattr(error, "original")
+        error = getattr(error, "original", error)
+
+        if isinstance(error, models.MessageError):
+            return await send(error.content, ephemeral=error.ephemeral)
 
         # Unknown Error
         __log__.error(

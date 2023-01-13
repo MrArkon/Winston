@@ -15,6 +15,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from .errors import MessageError
-from .plugin import Plugin
-from .tree import CommandTree
+from discord.app_commands import AppCommandError
+
+
+class MessageError(AppCommandError):
+    """An exception used to send a message to the user."""
+
+    def __init__(self, content: str, ephemeral: bool = True) -> None:
+        self.content = content
+        self.ephemeral = ephemeral
