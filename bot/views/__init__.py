@@ -17,3 +17,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from .base import DismissButton, View
 from .embed import CreateEmbed
+from .paginator import Paginator
