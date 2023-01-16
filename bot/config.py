@@ -40,3 +40,5 @@ VOICE_CHANNEL = discord.PartialEmoji(name="voice_channel", id=f["bot"]["emojis"]
 BADGES: dict[str, discord.PartialEmoji] = {}
 for name, id in f["bot"]["badges"].items():
     BADGES[name] = discord.PartialEmoji(name=name, id=id)
+
+DATABASE = f["database"]["settings"]

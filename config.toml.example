@@ -31,3 +31,9 @@ nitro = 0
 partner = 0
 staff = 0
 verified_bot_developer = 0
+
+[database.settings]
+host = ""
+user = ""
+database = ""
+password = ""
