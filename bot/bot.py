@@ -24,7 +24,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from bot import Plural, config, models
+from bot import Plural, config, database, models
 
 __log__ = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class Winston(commands.Bot):
         self.loop = loop
         self.session = session
 
-        intents = discord.Intents(members=True, guilds=True, guild_messages=True)
+        intents = discord.Intents(members=True, guilds=True, guild_messages=True, message_content=True)
         allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False)
         activity = discord.Activity(name="the Tomfoolery Olympics", type=discord.ActivityType.competing)
 
@@ -66,6 +66,8 @@ class Winston(commands.Bot):
 
     # Overrides
     async def setup_hook(self) -> None:
+        await database.Manager.init(**config.DATABASE)
+
         plugins = ["jishaku"]
 
         # Load Files
