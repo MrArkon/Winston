@@ -32,3 +32,14 @@ class Plural:
         plural = plural or f"{singular}s"
 
         return f"{self.value:,} {plural}" if abs(self.value) != 1 else f"{self.value} {singular}"
+
+
+def shorten_number(number: int | float) -> str:
+    number = float(f"{number:.3g}")
+    magnitude = 0
+
+    while abs(number) >= 1000:
+        magnitude += 1
+        number /= 1000
+
+    return f"{f'{number:f}'.rstrip('0').rstrip('.')}{['', 'K', 'M', 'B', 'T'][magnitude]}"
