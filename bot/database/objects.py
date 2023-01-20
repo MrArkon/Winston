@@ -41,7 +41,7 @@ class LevelConfig:
         """Returns the current level of a user from their total experience."""
         level = 0
 
-        while (self.experience - self.get_experience(level)) >= self.get_needed(level):
+        while (self.experience - self.get_experience(level)) >= self.get_required(level):
             level += 1
 
         return level
@@ -50,7 +50,7 @@ class LevelConfig:
         """Returns the total experience required for reaching a certain level."""
         return (level**3) + (104 * level)
 
-    def get_needed(self, level: int) -> int:
+    def get_required(self, level: int) -> int:
         """Returns the experience required for reaching the next level."""
         return (3 * level**2) + (3 * level) + 105
 
