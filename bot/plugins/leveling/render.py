@@ -81,6 +81,40 @@ def create_rounded_rectangle_mask(size: tuple[int, int], radius: int, alpha: int
     return image
 
 
+def create_outlined_rounded_rectangle(
+    size: tuple[int, int], radius: int, thickness: int, fill: tuple[int, int, int], outline: tuple[int, int, int]
+) -> tuple[Image.Image, Image.Image]:
+    with Image.new("RGB", (size[0] + thickness, size[1] + thickness), outline) as outline_image:
+        with Image.new("RGB", size, fill) as fill_image:
+            outline_image.paste(fill_image, (thickness // 2, thickness // 2), create_rounded_rectangle_mask(size, radius))
+
+        return (outline_image, create_rounded_rectangle_mask(outline_image.size, radius + (thickness // 2)))
+
+
+def get_dominant_color(image: Image.Image, palette_size=16) -> tuple[int, int, int]:
+    img = image.copy()
+    img.thumbnail((100, 100))
+
+    paletted = img.convert("P", palette=Image.ADAPTIVE, colors=palette_size)
+
+    palette = paletted.getpalette()
+    color_counts = sorted(paletted.getcolors(), reverse=True)
+    palette_index = color_counts[0][1]
+    dominant_color = palette[palette_index * 3 : palette_index * 3 + 3]  # type: ignore
+
+    return tuple(dominant_color)
+
+
+def get_color_alpha(
+    foreground: tuple[int, int, int], alpha: float, background: tuple[int, int, int] = (34, 40, 49)
+) -> tuple[int, int, int]:
+    color = []
+    for f, b in zip(foreground, background):
+        color.append(int(f * alpha + b * (1 - alpha)))
+
+    return tuple(color)
+
+
 @executor_function
 def render(
     avatar: bytes, user: discord.Member, level: int, current: int, required: int, rank: int, members: int, messages: int
@@ -88,15 +122,25 @@ def render(
     with Image.open("./assets/template.png") as template:
         # User Avatar
         with Image.open(BytesIO(avatar)).resize((184, 184), Image.BOX) as image:
+            color = get_dominant_color(image)
             mask = ImageChops.darker(MASK, image.split()[-1])
 
+            avatar_bg, avatar_bg_mask = create_outlined_rounded_rectangle(
+                (192, 192), 44, 4, (57, 62, 70), get_color_alpha(color, 0.6)
+            )
+            template.paste(avatar_bg, (38, 38), avatar_bg_mask)
+
+            avatar_bg.close()
+            avatar_bg_mask.close()
+
             template.paste(image, (44, 44), mask)
+            mask.close()
 
         draw = ImageDraw.Draw(template)
 
         # User Name
         draw.text((252, 62), user.nick or user.name, font=INTER_BOLD_48, fill=(235, 235, 235))
-        draw.text((252, 114), str(user), font=INTER_MEDIUM_28, fill=(216, 216, 216, 204))
+        draw.text((252, 114), str(user), font=INTER_MEDIUM_28, fill=get_color_alpha((216, 216, 216), 0.8))
 
         # Rank
         rank_text = f"Rank #{rank}"
@@ -109,67 +153,92 @@ def render(
             (1114 - width, 114),
             members_text,
             font=INTER_MEDIUM_28,
-            fill=(216, 216, 216, 204),
+            fill=get_color_alpha((216, 216, 216), 0.8),
         )
 
         # Progress Bar
+        empty_bar, empty_bar_mask = create_outlined_rounded_rectangle(
+            (862, 44), radius=10, thickness=4, fill=get_color_alpha(color, 0.3), outline=color
+        )
+        template.paste(empty_bar, (252, 162), empty_bar_mask)
+
+        empty_bar.close()
+        empty_bar_mask.close()
+
         if multiplier := abs(current / required):
-            with Image.new("RGB", (round(662 * multiplier), 44), color=(0, 173, 181)) as progress_bar:
-                template.paste(progress_bar, (252, 168), create_rounded_rectangle_mask(progress_bar.size, 10))
+            with Image.new("RGB", (round(862 * multiplier), 44), color=color) as progress_bar:
+                template.paste(progress_bar, (252, 164), create_rounded_rectangle_mask(progress_bar.size, 10))
 
         # Level
-        with Image.open("./assets/level.png") as level_background:
-            draw = ImageDraw.Draw(level_background)
+        level_bg, level_bg_mask = create_outlined_rounded_rectangle(
+            (192, 60), 20, 4, (57, 62, 70), get_color_alpha(color, 0.5)
+        )
+        draw = ImageDraw.Draw(level_bg)
 
-            text_width = INTER_MEDIUM_32.getlength("Level")
-            number_width = INTER_BOLD_36.getlength(str(level))
+        text_width = INTER_MEDIUM_32.getlength("Level")
+        number_width = INTER_BOLD_36.getlength(str(level))
 
-            offset = int((182 - (text_width + number_width)) / 2)
+        offset = int((186 - (text_width + number_width)) / 2)
 
-            draw.text((offset, 14), text="Level", font=INTER_MEDIUM_32, fill=(216, 216, 216))
-            draw.text((offset + text_width + 10, 10), text=str(level), font=INTER_BOLD_36, fill=(235, 235, 235))
+        draw.text((offset, 16), text="Level", font=INTER_MEDIUM_32, fill=(216, 216, 216))
+        draw.text((offset + text_width + 10, 12), text=str(level), font=INTER_BOLD_36, fill=(235, 235, 235))
 
-            template.paste(level_background, (40, 256), level_background)
+        template.paste(level_bg, (38, 254), level_bg_mask)
+
+        level_bg.close()
+        level_bg_mask.close()
 
         # Experience
-        with Image.open("./assets/experience.png") as experience_background:
-            draw = ImageDraw.Draw(experience_background)
-            text = f"{shorten_number(current)} XP / {shorten_number(required)}"
+        experience_bg, experience_bg_mask = create_outlined_rounded_rectangle(
+            (260, 60), 20, 4, (57, 62, 70), get_color_alpha(color, 0.5)
+        )
+        draw = ImageDraw.Draw(experience_bg)
 
-            font, y = EXPERIENCE[False]
-            if (text_size := font.getlength(text)) > 190:
-                font, y = EXPERIENCE[True]
-                text_size = font.getlength(text)
+        draw = ImageDraw.Draw(experience_bg)
+        text = f"{shorten_number(current)} XP / {shorten_number(required)}"
 
-            offset = int((212 - text_size) / 2)
+        font, y = EXPERIENCE[False]
+        if (text_size := font.getlength(text)) > 190:
+            font, y = EXPERIENCE[True]
+            text_size = font.getlength(text)
 
-            experience_background.paste(STAR, (offset, 14), STAR)
-            draw.text((offset + 48, y), text=text, font=font, fill=(235, 235, 235))
+        offset = int((212 - text_size) / 2)
 
-            template.paste(experience_background, (252, 256), experience_background)
+        experience_bg.paste(STAR, (offset, 14), STAR)
+        draw.text((offset + 48, y), text=text, font=font, fill=(235, 235, 235))
+
+        template.paste(experience_bg, (252, 254), experience_bg_mask)
+
+        experience_bg.close()
+        experience_bg_mask.close()
 
         # Messages
-        with Image.open("./assets/messages.png") as messages_background:
-            draw = ImageDraw.Draw(messages_background)
-            msg_count = shorten_number(messages)
+        messages_bg, messages_bg_mask = create_outlined_rounded_rectangle(
+            (268, 60), 20, 4, (57, 62, 70), get_color_alpha(color, 0.5)
+        )
+        draw = ImageDraw.Draw(messages_bg)
+        msg_count = shorten_number(messages)
 
-            count_font, text_font, count_offset, text_offset = INTER_BOLD_28, INTER_MEDIUM_24, 14, 18
-            if (text_size := (count_font.getlength(msg_count) + 8 + text_font.getlength("Messages"))) > 200:
-                cfont, tfont, count_offset, text_offset = INTER_BOLD_22, INTER_MEDIUM_20, 18, 20
-                text_size = cfont.getlength(msg_count) + 8 + tfont.getlength("Messages")
+        count_font, text_font, count_offset, text_offset = INTER_BOLD_28, INTER_MEDIUM_24, 14, 18
+        if (text_size := (count_font.getlength(msg_count) + 8 + text_font.getlength("Messages"))) > 200:
+            cfont, tfont, count_offset, text_offset = INTER_BOLD_22, INTER_MEDIUM_20, 18, 20
+            text_size = cfont.getlength(msg_count) + 8 + tfont.getlength("Messages")
 
-            offset = int((220 - text_size) / 2)
+        offset = int((220 - text_size) / 2)
 
-            messages_background.paste(BUBBLE, (offset, 14), BUBBLE)
-            draw.text((offset + 48, count_offset), text=msg_count, font=count_font, fill=(235, 235, 235))
-            draw.text(
-                (offset + 56 + count_font.getlength(msg_count), text_offset),
-                text="Messages",
-                font=text_font,
-                fill=(216, 216, 216),
-            )
+        messages_bg.paste(BUBBLE, (offset, 14), BUBBLE)
+        draw.text((offset + 48, count_offset), text=msg_count, font=count_font, fill=(235, 235, 235))
+        draw.text(
+            (offset + 56 + count_font.getlength(msg_count), text_offset),
+            text="Messages",
+            font=text_font,
+            fill=(216, 216, 216),
+        )
 
-            template.paste(messages_background, (846, 256), messages_background)
+        template.paste(messages_bg, (846, 256), messages_bg_mask)
+
+        messages_bg.close()
+        messages_bg_mask.close()
 
     buffer = BytesIO()
     template.save(buffer, "png")
